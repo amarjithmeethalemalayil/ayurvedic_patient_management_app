@@ -1,107 +1,87 @@
-import 'package:ayurvedic_patient_management_app/core/assets/app_assets.dart';
-import 'package:ayurvedic_patient_management_app/core/common_widgets/app_button.dart';
-import 'package:ayurvedic_patient_management_app/core/common_widgets/app_spacer.dart';
-import 'package:ayurvedic_patient_management_app/core/common_widgets/app_text_form_field_with_header.dart';
-import 'package:ayurvedic_patient_management_app/core/theme/app_colors.dart';
-import 'package:ayurvedic_patient_management_app/core/theme/app_font_style.dart';
-import 'package:flutter/gestures.dart';
+import 'package:ayurvedic_patient_management_app/core/common_widgets/loader.dart';
+import 'package:ayurvedic_patient_management_app/features/home/presentation/pages/home_screen.dart';
+import 'package:ayurvedic_patient_management_app/features/login/presentation/login_provider/login_provider.dart';
+import 'package:ayurvedic_patient_management_app/features/login/presentation/widgets/login_form.dart';
+import 'package:ayurvedic_patient_management_app/features/login/presentation/widgets/login_top.dart';
+import 'package:ayurvedic_patient_management_app/features/login/presentation/widgets/terms_and_condition.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final _key = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _login(LoginProvider loginProvider) {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    loginProvider.login(email, password);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      body: Consumer<LoginProvider>(
+        builder: (context, loginProvider, _) {
+          if (loginProvider.user != null) {
+            return const HomeScreen();
+          }
+          if (loginProvider.isLoading) {
+            return const Loader();
+          }
+          if (loginProvider.error.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(loginProvider.error),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            });
+          }
+
+          return _loginPage(loginProvider);
+        },
+      ),
+    );
+  }
+
+  Widget _loginPage(LoginProvider loginProvider) {
+    return Form(
+      key: _key,
+      child: SafeArea(
         child: Column(
           children: [
-            _loginPageTop(),
-            Expanded(child: SingleChildScrollView(child: _loginForm())),
-            _termsAndCondition(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _loginPageTop() {
-    return Container(
-      height: 211.h,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(AppAssets.loginPageTopImage),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: SizedBox(
-        width: 80.w,
-        height: 84.h,
-        child: Image.asset(AppAssets.loginPageTopLogo),
-      ),
-    );
-  }
-
-  Widget _loginForm() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Column(
-        children: [
-          AppSpacer(height: 30.h),
-          Text(
-            "Login or register to book your appointments",
-            style: AppFontStyle.semiBold.copyWith(fontSize: 24.sp),
-          ),
-          AppSpacer(height: 30.h),
-          AppTextFormFieldWithHeader(
-            header: "Email",
-            hintText: "Enter your email",
-          ),
-          AppSpacer(height: 20.h),
-          AppTextFormFieldWithHeader(
-            header: "Password",
-            hintText: "Enter password",
-          ),
-          AppSpacer(height: 60.h),
-          AppButton(onPressed: () {}, buttonLabel: "Login"),
-        ],
-      ),
-    );
-  }
-
-  Widget _termsAndCondition() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-      child: RichText(
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          style: AppFontStyle.termsAndConditionTextStyle.copyWith(
-            color: AppColors.primaryTextColor,
-          ),
-          children: [
-            TextSpan(
-              text:
-                  'By creating or logging into an account you are agreeing with our ',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w300,
-                fontSize: 12.sp,
+            const LoginTop(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: LoginForm(
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  onPressed: () {
+                    if (_key.currentState!.validate()) {
+                      _login(loginProvider);
+                    }
+                  },
+                ),
               ),
             ),
-            TextSpan(
-              text: 'Terms and Conditions',
-              style: AppFontStyle.termsAndConditionTextStyle,
-              recognizer: TapGestureRecognizer()..onTap = () {},
-            ),
-            TextSpan(text: ' and '),
-            TextSpan(
-              text: 'Privacy Policy',
-              style: AppFontStyle.termsAndConditionTextStyle,
-              recognizer: TapGestureRecognizer()..onTap = () {},
-            ),
-            TextSpan(text: '.'),
+            const TermsAndCondition(),
           ],
         ),
       ),

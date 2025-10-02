@@ -6,7 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class AppTextFormFieldWithHeader extends StatelessWidget {
   final String header;
   final String hintText;
-  const AppTextFormFieldWithHeader({super.key, required this.header, required this.hintText});
+  final TextEditingController controller;
+  final FormFieldValidator<String>? validator;
+  const AppTextFormFieldWithHeader({super.key, required this.header, required this.hintText, required this.controller, this.validator});
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +26,13 @@ class AppTextFormFieldWithHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(8.r),
             border: Border.all(color: AppColors.normalTextFieldColor, width: 1),
           ),
-          child: TextField(
+          child: TextFormField(
+            controller: controller,
             decoration: InputDecoration(
               hintText: hintText,
             ),
             style: TextStyle(fontSize: 14.sp),
+            validator: validator,
           ),
         ),
       ],
